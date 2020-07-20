@@ -14,4 +14,11 @@ Global
 		{D7D4B4F9-B822-4FAA-A61B-32558E4B6626}.Release|anycpu.ActiveCfg = Release|anycpu
 		{D7D4B4F9-B822-4FAA-A61B-32558E4B6626}.Release|anycpu.Build.0 = Release|anycpu
 	EndGlobalSection
+	GlobalSection(MonoDevelopProperties) = preSolution
+		Policies = $0
+		$0.DotNetNamingPolicy = $1
+		$1.DirectoryNamespaceAssociation = PrefixedHierarchical
+		$0.StandardHeader = $2
+		$0.VersionControlPolicy = $3
+	EndGlobalSection
 EndGlobal
