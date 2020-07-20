@@ -6,7 +6,12 @@ namespace HelloDevOpsWorld
     {
         public static void Main(string[] args)
         {
-            Console.WriteLine("Hello DevOps World!");
+            string name = string.Empty;
+
+            if (args.Length > 1)
+                name = args[1];
+
+            Console.WriteLine("Hello DevOps World!" + name);
         }
     }
 }
