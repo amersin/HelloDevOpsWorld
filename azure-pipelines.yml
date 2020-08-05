@@ -1,7 +1,7 @@
-# .NET Desktop
-# Build and run tests for .NET Desktop or Windows classic desktop solutions.
-# Add steps that publish symbols, save build artifacts, and more:
-# https://docs.microsoft.com/azure/devops/pipelines/apps/windows/dot-net
+# ASP.NET
+# Build and test ASP.NET projects.
+# Add steps that publish symbols, save build artifacts, deploy, and more:
+# https://docs.microsoft.com/azure/devops/pipelines/apps/aspnet/build-aspnet-4
 
 trigger:
 - master
@@ -10,22 +10,40 @@ pool:
   vmImage: 'windows-latest'
 
 variables:
-  solution: '**/*.sln'
-  buildPlatform: 'Any CPU'
-  buildConfiguration: 'Release'
+  az.resource: synopsysgsa
+  az.container: products
+  az.cov.folder: cov-analysis
+  cov.bin: 'z:/$(az.cov.folder)/bin'
+  cov.url: 'https://coverity.synopsysgsa.synopsys.com:8443/'
+  cov.authkey: 'c:/tools/coverity/analysis/commit-authkey'
+  cov.stream: 'HelloDevOpsWorld'
+  cov.idir: '$(Build.SourcesDirectory)/idir'
+  cov.checkers: '--all --webapp-security'
+  cov.bldcmd: 'msbuild HelloDevOpsWorld.sln /t:build'
 
 steps:
-- task: NuGetToolInstaller@1
-
-- task: NuGetCommand@2
+- task: PowerShell@2
+  env:
+    SMB_PASSWORD: $(SECRET_SMB_PASSWORD)
   inputs:
-    restoreSolution: '$(solution)'
-
-- task: VSBuild@1
+    targetType: 'inline'
+    script: |
+      $connectTestResult = Test-NetConnection -ComputerName $(az.resource).file.core.windows.net -Port 445
+      if ($connectTestResult.TcpTestSucceeded) {
+          # Save the password so the drive will persist on reboot
+          cmd.exe /C "cmdkey /add:`"$(az.resource).file.core.windows.net`" /user:`"Azure\$(az.resource)`" /pass:`"$env:SMB_PASSWORD`""
+          # Mount the drive
+          New-PSDrive -Name Z -PSProvider FileSystem -Root "\\$(az.resource).file.core.windows.net\$(az.container)" -Persist
+      } else {
+          Write-Error -Message "Unable to reach the Azure storage account via port 445. Check to make sure your organization or ISP is not blocking port 445, or use Azure P2S VPN, Azure S2S VPN, or Express Route to tunnel SMB traffic over a different port."
+      }
+   
+- task: CmdLine@2
   inputs:
-    solution: '$(solution)'
-
-- task: VSTest@2
-  inputs:
-    platform: '$(buildPlatform)'
-    configuration: '$(buildConfiguration)'
+    script: |
+      curl -fsLOS https://github.com/Microsoft/vswhere/releases/latest/download/vswhere.exe
+      for /f "tokens=*" %%i in ('vswhere -find MSBuild\*\Bin') do set PATH=%PATH%;%%i
+      
+      echo on
+      $(cov.bin)/cov-build --dir $(cov.idir) --fs-capture-search $(Build.SourcesDirectory) $(cov.bldcmd)
+      $(cov.bin)/cov-analyze --dir $(cov.idir) --ticker-mode none --strip-path $(Build.SourcesDirectory) $(cov.checkers)
