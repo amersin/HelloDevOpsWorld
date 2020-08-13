@@ -27,7 +27,15 @@ variables:
   cov.stream: WebGoat.NET
 
 steps:
+- task: CmdLine@2
+  displayName: Download license & key files
+  env:
+    SAS_TOKEN: $(SECRET_SAS_TOKEN)
+  inputs:
+    script: |
+      azcopy copy "https://$(az.resource).file.core.windows.net/$(az.license.container)/$(az.license.folder)$SAS_TOKEN" "$(Pipeline.Workspace)" --recursive
 - task: PowerShell@2
+  displayName: Map Coverity executables share
   env:
     SMB_PASSWORD: $(SECRET_SMB_PASSWORD)
   inputs:
@@ -42,14 +50,6 @@ steps:
       } else {
         Write-Error -Message "Unable to reach the Azure storage account via port 445. Check to make sure your organization or ISP is not blocking port 445, or use Azure P2S VPN, Azure S2S VPN, or Express Route to tunnel SMB traffic over a different port."
       }
-- task: CmdLine@2
-  displayName: Download license & key files
-  env:
-    SAS_TOKEN: $(SECRET_SAS_TOKEN)
-  inputs:
-    script: |
-      echo "azcopy copy "https://$(az.resource).file.core.windows.net/$(az.license.container)/$(az.license.folder)$SAS_TOKEN" "$(Pipeline.Workspace)" --recursive"
-      azcopy copy "https://$(az.resource).file.core.windows.net/$(az.license.container)/$(az.license.folder)$SAS_TOKEN" "$(Pipeline.Workspace)" --recursive
 - task: CmdLine@2
   displayName: Configure Coverity
   inputs:
