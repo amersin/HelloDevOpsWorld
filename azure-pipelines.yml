@@ -12,6 +12,7 @@ pool:
 variables:
   az.container: products
   az.cov.folder: cov-analysis
+  az.requiredfiles.container: requiredfiles
   az.license.folder: custom_files
   az.resource: synopsysgsafs
   cov.authkeyfile: '$(Pipeline.Workspace)/$(az.license.folder)/auth-key.txt'
@@ -46,7 +47,7 @@ steps:
     SAS_TOKEN: $(SECRET_SAS_TOKEN)
   inputs:
     script: |
-      azcopy copy "https://$(az.resource).file.core.windows.net/$(az.container)/$(az.license.folder)$SAS_TOKEN" "$(Pipeline.Workspace)"  --recursive
+      azcopy copy "https://$(az.resource).file.core.windows.net/$(az.requiredfiles.container)/$(az.license.folder)$SAS_TOKEN" "$(Pipeline.Workspace)"  --recursive
 - task: CmdLine@2
   displayName: Configure Coverity
   inputs:
