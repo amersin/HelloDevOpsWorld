@@ -63,5 +63,5 @@ steps:
       for /f "tokens=*" %%i in ('vswhere -find MSBuild\*\Bin') do set PATH=%PATH%;%%i
       
       echo on
-      $(cov.bin)/cov-build --config $(cov.config) --dir $(cov.idir) $(Build.SourcesDirectory) $(cov.bldcmd)
+      $(cov.bin)/cov-build --config $(cov.config) --dir $(cov.idir) $(cov.bldcmd)
       $(cov.bin)/cov-analyze --config $(cov.config) --dir $(cov.idir) --ticker-mode none --strip-path $(Build.SourcesDirectory) $(cov.checkers) -sf $(cov.license)
