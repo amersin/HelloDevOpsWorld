@@ -48,6 +48,7 @@ steps:
     SAS_TOKEN: $(SECRET_SAS_TOKEN)
   inputs:
     script: |
+      echo "azcopy copy "https://$(az.resource).file.core.windows.net/$(az.license.container)/$(az.license.folder)$SAS_TOKEN" "$(Pipeline.Workspace)" --recursive"
       azcopy copy "https://$(az.resource).file.core.windows.net/$(az.license.container)/$(az.license.folder)$SAS_TOKEN" "$(Pipeline.Workspace)" --recursive
 - task: CmdLine@2
   displayName: Configure Coverity
