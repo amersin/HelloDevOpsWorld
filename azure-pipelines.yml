@@ -50,14 +50,6 @@ steps:
     targetType: 'inline'
     script: |
       azcopy copy "https://$(az.resource).file.core.windows.net/$(az.license.container)/$(az.license.folder)$env:SAS_TOKEN" "$(Pipeline.Workspace)" --recursive
-      
-      Write-Host "Hello World"
-- task: CmdLine@2
-  displayName: Download license & key files
-  env:
-    SAS_TOKEN: $(SECRET_SAS_TOKEN)
-  inputs:
-    script: 'azcopy copy "https://$(az.resource).file.core.windows.net/$(az.license.container)/$(az.license.folder)$(SAS_TOKEN)" "$(Pipeline.Workspace)" --recursive'
 - task: CmdLine@2
   displayName: Configure Coverity
   inputs:
