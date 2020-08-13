@@ -10,16 +10,19 @@ pool:
   vmImage: 'windows-latest'
 
 variables:
-  az.resource: synopsysgsa
   az.container: products
   az.cov.folder: cov-analysis
-  cov.bin: 'z:/$(az.cov.folder)/bin'
-  cov.url: 'https://coverity.synopsysgsa.synopsys.com:8443/'
-  cov.authkey: 'c:/tools/coverity/analysis/commit-authkey'
-  cov.stream: 'HelloDevOpsWorld'
-  cov.idir: '$(Build.SourcesDirectory)/idir'
-  cov.checkers: '--all --webapp-security'
+  az.license.folder: custom_files
+  az.resource: synopsysgsafs
+  cov.authkeyfile: '$(Pipeline.Workspace)/$(az.license.folder)/auth-key.txt'
+  cov.bin: '$(cov.folder)/bin'
   cov.bldcmd: 'msbuild HelloDevOpsWorld.sln /t:build'
+  cov.checkers: '--all --webapp-security'
+  cov.drive: Z
+  cov.idir: '$(Build.SourcesDirectory)/idir'
+  cov.folder: '$(cov.folder)/$(az.cov.folder)'
+  cov.url: http://coverity.eastus.cloudapp.azure.com:18080
+  cov.stream: WebGoat.NET
 
 steps:
 - task: PowerShell@2
@@ -30,14 +33,27 @@ steps:
     script: |
       $connectTestResult = Test-NetConnection -ComputerName $(az.resource).file.core.windows.net -Port 445
       if ($connectTestResult.TcpTestSucceeded) {
-          # Save the password so the drive will persist on reboot
-          cmd.exe /C "cmdkey /add:`"$(az.resource).file.core.windows.net`" /user:`"Azure\$(az.resource)`" /pass:`"$env:SMB_PASSWORD`""
-          # Mount the drive
-          New-PSDrive -Name Z -PSProvider FileSystem -Root "\\$(az.resource).file.core.windows.net\$(az.container)" -Persist
+        # Save the password so the drive will persist on reboot
+        cmd.exe /C "cmdkey /add:`"$(az.resource).file.core.windows.net`" /user:`"Azure\$(az.resource)`" /pass:`"$env:SMB_PASSWORD`""
+        # Mount the drive
+        New-PSDrive -Name Z -PSProvider FileSystem -Root "\\$(az.resource).file.core.windows.net\$(az.container)" -Persist
       } else {
-          Write-Error -Message "Unable to reach the Azure storage account via port 445. Check to make sure your organization or ISP is not blocking port 445, or use Azure P2S VPN, Azure S2S VPN, or Express Route to tunnel SMB traffic over a different port."
+        Write-Error -Message "Unable to reach the Azure storage account via port 445. Check to make sure your organization or ISP is not blocking port 445, or use Azure P2S VPN, Azure S2S VPN, or Express Route to tunnel SMB traffic over a different port."
       }
-   
+- task: CmdLine@2
+  displayName: Download license & key files
+  env:
+    SAS_TOKEN: $(SECRET_SAS_TOKEN)
+  inputs:
+    script: |
+      azcopy10 copy "https://$(az.resource).file.core.windows.net/$(az.container)/$(az.license.folder)$SAS_TOKEN" "$(Pipeline.Workspace)"  --recursive
+- task: CmdLine@2
+  displayName: Configure Coverity
+  inputs:
+    script: |
+      mv $(Pipeline.Workspace)/$(az.license.folder)/license.dat $(cov.bin)/license.dat
+      
+      $(cov.bin)/cov-configure --cs   
 - task: CmdLine@2
   inputs:
     script: |
