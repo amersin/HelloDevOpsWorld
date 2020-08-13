@@ -20,7 +20,7 @@ variables:
   cov.checkers: '--all --webapp-security'
   cov.drive: Z
   cov.idir: '$(Build.SourcesDirectory)/idir'
-  cov.folder: '$(cov.folder)/$(az.cov.folder)'
+  cov.folder: '$(cov.drive)/$(az.cov.folder)'
   cov.url: http://coverity.eastus.cloudapp.azure.com:18080
   cov.stream: WebGoat.NET
 
@@ -46,7 +46,7 @@ steps:
     SAS_TOKEN: $(SECRET_SAS_TOKEN)
   inputs:
     script: |
-      azcopy10 copy "https://$(az.resource).file.core.windows.net/$(az.container)/$(az.license.folder)$SAS_TOKEN" "$(Pipeline.Workspace)"  --recursive
+      azcopy copy "https://$(az.resource).file.core.windows.net/$(az.container)/$(az.license.folder)$SAS_TOKEN" "$(Pipeline.Workspace)"  --recursive
 - task: CmdLine@2
   displayName: Configure Coverity
   inputs:
@@ -63,3 +63,5 @@ steps:
       echo on
       $(cov.bin)/cov-build --dir $(cov.idir) --fs-capture-search $(Build.SourcesDirectory) $(cov.bldcmd)
       $(cov.bin)/cov-analyze --dir $(cov.idir) --ticker-mode none --strip-path $(Build.SourcesDirectory) $(cov.checkers)
+
+      rm $(cov.bin)/license.dat
