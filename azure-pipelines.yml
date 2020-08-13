@@ -29,11 +29,10 @@ variables:
 steps:
 - task: CmdLine@2
   displayName: Download license & key files
-  env:
-    SAS_TOKEN: $(SECRET_SAS_TOKEN)
   inputs:
     script: |
       azcopy copy "https://$(cov.container).blob.core.windows.net/$(az.cov.container)/$(az.license.folder)$SAS_TOKEN" "$(Pipeline.Workspace)" --recursive
+      ls
 - task: PowerShell@2
   displayName: Map Coverity executables share
   env:
