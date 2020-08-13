@@ -33,7 +33,7 @@ steps:
     SAS_TOKEN: $(SECRET_SAS_TOKEN)
   inputs:
     script: |
-      azcopy copy "https://$products.blob.core.windows.net/$(az.cov.container)/$(az.license.folder)$SAS_TOKEN" "$(Pipeline.Workspace)" --recursive
+      azcopy copy "https://$(cov.container).blob.core.windows.net/$(az.cov.container)/$(az.license.folder)$SAS_TOKEN" "$(Pipeline.Workspace)" --recursive
 - task: PowerShell@2
   displayName: Map Coverity executables share
   env:
