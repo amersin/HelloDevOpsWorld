@@ -19,6 +19,7 @@ variables:
   cov.bin: '$(cov.folder)/bin'
   cov.bldcmd: 'msbuild HelloDevOpsWorld.sln /t:build'
   cov.checkers: '--all --webapp-security'
+  cov.config: '$(Pipeline.Workspace)/config/cov.config.xml'
   cov.drive: Z
   cov.idir: '$(Build.SourcesDirectory)/idir'
   cov.folder: '$(cov.drive):/$(az.cov.folder)'
@@ -54,7 +55,7 @@ steps:
   displayName: Configure Coverity
   inputs:
     script: |
-      $(cov.bin)/cov-configure --cs   
+      $(cov.bin)/cov-configure --config $(cov.config) --cs
 - task: CmdLine@2
   inputs:
     script: |
@@ -62,5 +63,5 @@ steps:
       for /f "tokens=*" %%i in ('vswhere -find MSBuild\*\Bin') do set PATH=%PATH%;%%i
       
       echo on
-      $(cov.bin)/cov-build --dir $(cov.idir) --fs-capture-search $(Build.SourcesDirectory) $(cov.bldcmd)
-      $(cov.bin)/cov-analyze --dir $(cov.idir) --ticker-mode none --strip-path $(Build.SourcesDirectory) $(cov.checkers) -sf $(cov.license)
+      $(cov.bin)/cov-build --config $(cov.config) --dir $(cov.idir) $(Build.SourcesDirectory) $(cov.bldcmd)
+      $(cov.bin)/cov-analyze --config $(cov.config) --dir $(cov.idir) --ticker-mode none --strip-path $(Build.SourcesDirectory) $(cov.checkers) -sf $(cov.license)
