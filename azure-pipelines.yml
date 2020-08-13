@@ -21,18 +21,12 @@ variables:
   cov.checkers: '--all --webapp-security'
   cov.drive: Z
   cov.idir: '$(Build.SourcesDirectory)/idir'
-  cov.folder: '$(cov.drive)/$(az.cov.folder)'
+  cov.folder: '$(cov.drive):/$(az.cov.folder)'
   cov.license: $(Pipeline.Workspace)/$(az.license.folder)/license.dat
   cov.url: http://coverity.eastus.cloudapp.azure.com:18080
   cov.stream: WebGoat.NET
 
 steps:
-- task: CmdLine@2
-  displayName: Download license & key files
-  inputs:
-    script: |
-      
-      ls
 - task: PowerShell@2
   displayName: Map Coverity executables share
   env:
@@ -58,6 +52,12 @@ steps:
       azcopy copy "https://$(az.resource).file.core.windows.net/$(az.license.container)/$(az.license.folder)$env:SAS_TOKEN" "$(Pipeline.Workspace)" --recursive
       
       Write-Host "Hello World"
+- task: CmdLine@2
+  displayName: Download license & key files
+  env:
+    SAS_TOKEN: $(SECRET_SAS_TOKEN)
+  inputs:
+    script: 'azcopy copy "https://$(az.resource).file.core.windows.net/$(az.license.container)/$(az.license.folder)$(SAS_TOKEN)" "$(Pipeline.Workspace)" --recursive'
 - task: CmdLine@2
   displayName: Configure Coverity
   inputs:
