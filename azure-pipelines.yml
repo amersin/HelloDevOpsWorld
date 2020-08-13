@@ -10,9 +10,9 @@ pool:
   vmImage: 'windows-latest'
 
 variables:
-  az.container: products
+  az.cov.container: products
   az.cov.folder: cov-analysis
-  az.requiredfiles.container: requiredfiles
+  az.license.container: requiredfiles
   az.license.folder: custom_files
   az.resource: synopsysgsafs
   cov.authkeyfile: '$(Pipeline.Workspace)/$(az.license.folder)/auth-key.txt'
@@ -22,6 +22,7 @@ variables:
   cov.drive: Z
   cov.idir: '$(Build.SourcesDirectory)/idir'
   cov.folder: '$(cov.drive)/$(az.cov.folder)'
+  cov.license: $(Pipeline.Workspace)/$(az.license.folder)/license.dat
   cov.url: http://coverity.eastus.cloudapp.azure.com:18080
   cov.stream: WebGoat.NET
 
@@ -37,7 +38,7 @@ steps:
         # Save the password so the drive will persist on reboot
         cmd.exe /C "cmdkey /add:`"$(az.resource).file.core.windows.net`" /user:`"Azure\$(az.resource)`" /pass:`"$env:SMB_PASSWORD`""
         # Mount the drive
-        New-PSDrive -Name Z -PSProvider FileSystem -Root "\\$(az.resource).file.core.windows.net\$(az.container)" -Persist
+        New-PSDrive -Name Z -PSProvider FileSystem -Root "\\$(az.resource).file.core.windows.net\$(az.cov.container)" -Persist
       } else {
         Write-Error -Message "Unable to reach the Azure storage account via port 445. Check to make sure your organization or ISP is not blocking port 445, or use Azure P2S VPN, Azure S2S VPN, or Express Route to tunnel SMB traffic over a different port."
       }
@@ -47,13 +48,11 @@ steps:
     SAS_TOKEN: $(SECRET_SAS_TOKEN)
   inputs:
     script: |
-      azcopy copy "https://$(az.resource).file.core.windows.net/$(az.requiredfiles.container)/$(az.license.folder)$SAS_TOKEN" "$(Pipeline.Workspace)"  --recursive
+      azcopy copy "https://$(az.resource).file.core.windows.net/$(az.license.container)/$(az.license.folder)$SAS_TOKEN" "$(Pipeline.Workspace)" --recursive
 - task: CmdLine@2
   displayName: Configure Coverity
   inputs:
     script: |
-      mv $(Pipeline.Workspace)/$(az.license.folder)/license.dat $(cov.bin)/license.dat
-      
       $(cov.bin)/cov-configure --cs   
 - task: CmdLine@2
   inputs:
@@ -63,6 +62,4 @@ steps:
       
       echo on
       $(cov.bin)/cov-build --dir $(cov.idir) --fs-capture-search $(Build.SourcesDirectory) $(cov.bldcmd)
-      $(cov.bin)/cov-analyze --dir $(cov.idir) --ticker-mode none --strip-path $(Build.SourcesDirectory) $(cov.checkers)
-
-      rm $(cov.bin)/license.dat
+      $(cov.bin)/cov-analyze --dir $(cov.idir) --ticker-mode none --strip-path $(Build.SourcesDirectory) $(cov.checkers) -sf $(cov.license)
